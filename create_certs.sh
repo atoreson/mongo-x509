@@ -47,10 +47,14 @@ else
 fi
 
 if [ -d "$CERTS_DIR" ]; then
-    echo -n "Warning: files under directory $CERTS_DIR exists, override [y/N]? "
+    echo -n "* Warning: files under directory $CERTS_DIR exists, override [y/N]? "
     read y
     if [ "$y" != "y" ]; then
         exit
+    fi
+    if [ -f "$CERTS_DIR/certs.env" ]; then
+        echo "* Warning: environment file $CERTS_DIR/certs.env found, source it"
+        source $CERTS_DIR/certs.env
     fi
 else
     mkdir -p $CERTS_DIR
@@ -59,7 +63,7 @@ fi
 if [ "$CA" != "" ]; then
     cp $CA $CERTS_DIR/ca.pem || exit
 elif [ -f "ca-$(hostname -f).pem" ]; then
-    echo -n "Warning: master ca pem file ca-$(hostname -f).pem exists, override [y/N]? "
+    echo -n "* Warning: master ca pem file ca-$(hostname -f).pem exists, override [y/N]? "
     read y
     if [ "$y" == "y" ]; then
         rm -f ca-$(hostname -f).pem
@@ -223,6 +227,17 @@ fi
 
 echo "rename $CERTS_DIR/ca.crt to $CERTS_DIR/ca.pem"
 mv ca.crt ca.pem
+cat > certs.env <<EOF
+export C=$C
+export ST=$ST
+export L=$L
+export O=$O
+export OU_SERVER=$OU_SERVER
+export OU_USER=$OU_USER
+export CN_ADMIN=$CN_ADMIN
+export CN_USER=$CN_USER
+export DAYS=$DAYS
+EOF
 
 cd $OPWD
 tree=$(which tree)

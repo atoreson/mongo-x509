@@ -44,6 +44,7 @@ source certs.env
 certs
 ├── $(hostname -f).pem
 ├── ca.pem
+├── certs.env
 ├── client.pem
 └── server.pem
 ```
@@ -59,6 +60,7 @@ source certs.env
 
 example.com/
 ├── ca.pem
+├── certs.env
 ├── client.pem
 ├── host1.example.com.pem
 ├── host2.example.com.pem
@@ -69,13 +71,14 @@ example.com/
 Create certificates to add to the same cluster using the same CA file.
 
 ```
-source certs.env
+source example.com/certs.env
 
 ./create_certs.sh -o example.com -c master-example.com.pem \
   host4.example.com
 
 example.com/
 ├── ca.pem
+├── certs.env
 ├── client.pem
 ├── host1.example.com.pem
 ├── host2.example.com.pem
