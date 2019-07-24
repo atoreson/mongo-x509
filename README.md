@@ -25,11 +25,12 @@ DAYS        number of days until certificate expired
 ## Demo
 Execute the `test.sh` script, which
 
-- Create certificates
-- Spin up a *mongo* instance
+- Create x509 certificates
+- Spin up a 3-member replica
+- Secure the replica with x509 certificates, both cluster and inflight
 - Create a user defined in *certs.env*
-- Restart the *mongo* instance with authentication enabled
-- Login to the *mongo* instance and display connection status
+- Login to the replica and display replica and connection status
+- clean up
 
 ## Use Cases
 Here are a few use cases to use this script.
