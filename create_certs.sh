@@ -178,8 +178,7 @@ do
 	subjectAltName = @alt_names
 	[alt_names]
 	DNS.1=localhost
-	DNS.2=127.0.0.1
-	DNS.3=$hostname
+	DNS.2=$hostname
 	EOF
 	)
 
