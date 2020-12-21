@@ -99,7 +99,6 @@ read -r -d '' CADATA <<-EOF
 default_bits = 2048
 prompt = no
 distinguished_name = dn
-default_md = x509
 x509_extensions = v3_req
 [dn]
 $DN
@@ -121,9 +120,6 @@ read -r -d '' PEMDATA <<-EOF
 default_bits = 2048
 prompt = no
 distinguished_name = dn
-default_md = x509
-req_extensions = v3_req
-[v3_req]
 [dn]
 $DN
 OU=$OU_SERVER
@@ -134,8 +130,6 @@ read -r -d '' CLIENT_PEMDATA <<-EOF
 default_bits = 2048
 prompt = no
 distinguished_name = dn
-default_md = x509
-req_extensions = v3_req
 [dn]
 C=$C
 ST=$ST
@@ -143,13 +137,12 @@ L=$L
 O=$O
 OU=$OU_USER
 CN=$CN_USER
-[v3_req]
 EOF
 
 # CA certificates
 # echo "Creating server certificate and key file: ca.crt and ca.key"
 if [ "$CA" == "" ]; then
-	openssl req -nodes -x509 -days ${DAYS} -newkey rsa:2048 -keyout ca.key -out ca.crt -config <(
+	openssl req -x509 -sha256 -days ${DAYS} -newkey rsa:2048 -nodes -keyout ca.key -out ca.crt -config <(
 	cat <<-EOF
 	$CADATA
 	EOF
@@ -164,17 +157,22 @@ fi
 # Server certificates
 for hostname in $hostnames
 do
-	openssl req -nodes -newkey rsa:2048 -keyout server.key -out server.csr -config <(
+	openssl req -nodes -sha256 -newkey rsa:2048 -keyout server.key -out server.csr -config <(
 	cat <<-EOF
 	$PEMDATA
     CN=$hostname
 	EOF
 	)
 
-	openssl x509 -req -in server.csr -CA ca.pem -CAkey ca.pem -CAcreateserial -days ${DAYS} -out server.crt -extfile <(
+	openssl x509 -req -sha256 -in server.csr -CA ca.pem -CAkey ca.pem -CAcreateserial -days ${DAYS} -out server.crt -extfile <(
 	cat <<-EOF
 	basicConstraints = CA:FALSE
-	keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+    nsCertType = client, email
+    nsComment = "OpenSSL Generated Client Certificate"
+    subjectKeyIdentifier = hash
+    authorityKeyIdentifier = keyid,issuer
+    keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+    extendedKeyUsage = serverAuth, clientAuth, emailProtection
 	subjectAltName = @alt_names
 	[alt_names]
 	DNS.1=localhost
@@ -195,18 +193,27 @@ do
 done
 
 # Client certificates
+    echo "before client"
 if [ ! -f client.pem ]; then
+    echo "in client"
 	# echo "Creating client certificate and key file: client.crt and client.key"
-	openssl req -nodes -newkey rsa:2048 -keyout client.key -out client.csr -config <(
+    echo $CLIENT_PEMDATA
+	openssl req -nodes -sha256 -newkey rsa:2048 -keyout client.key -out client.csr -config <(
 	cat <<-EOF
 	$CLIENT_PEMDATA
 	EOF
 	)
+	# keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+	# extendedKeyUsage = TLS Web Server Authentication, TLS Web Client Authentication
 	openssl x509 -req -in client.csr -CA ca.pem -CAkey ca.pem -CAserial ca.srl -days ${DAYS} -out client.crt -extfile <(
 	cat <<-EOF
 	basicConstraints = CA:FALSE
-	keyUsage = nonRepudiation, digitalSignature, keyEncipherment
-	extendedKeyUsage = TLS Web Server Authentication, TLS Web Client Authentication
+    nsCertType = client, email
+    nsComment = "OpenSSL Generated Client Certificate"
+    subjectKeyIdentifier = hash
+    authorityKeyIdentifier = keyid,issuer
+    keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+    extendedKeyUsage = serverAuth, clientAuth, emailProtection
 	EOF
 	)
 	cat client.key client.crt > client.pem
